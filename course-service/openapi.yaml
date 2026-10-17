@@ -1,0 +1,1108 @@
+openapi: 3.0.3
+info:
+  title: Course service
+  version: 1.0.0
+  description: Course service API
+  contact:
+    name: Тех. поддержка
+    email: support@yandex.ru
+
+servers:
+  - url: http://127.0.0.1:8000
+    description: Development
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Courses
+    description: Управление курсами
+  - name: Students
+    description: Студенты курса
+  - name: Assignments
+    description: Задания курса
+  - name: Submissions
+    description: Отправки решений
+  - name: Reviews
+    description: Проверки отправок
+
+paths:
+  /api/v1/courses:
+    get:
+      tags: [Courses]
+      summary: Получить список доступных курсов
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Sort"
+        - name: status
+          in: query
+          description: Фильтр по статусу курса
+          schema:
+            $ref: "#/components/schemas/CourseStatus"
+      responses:
+        "200":
+          description: Список курсов
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Courses"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Courses]
+      summary: Создать новый курс
+      description: Доступно только администратору
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseCreate"
+            example:
+              title: Backend разработка на Python
+              description: Курс по разработке backend-сервисов на Python и FastAPI
+              teacher_id: 11111111-1111-1111-1111-111111111111
+              status: DRAFT
+      responses:
+        "201":
+          description: Курс создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+              example:
+                id: 00000000-0000-0000-0000-000000000000
+                title: Backend разработка на Python
+                description: Курс по разработке backend-сервисов на Python и FastAPI
+                teacher_id: 11111111-1111-1111-1111-111111111111
+                status: DRAFT
+                created_at: "1990-01-01T00:00:00Z"
+                updated_at: "1990-01-01T00:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/courses/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Courses]
+      summary: Получить курс по идентификатору
+      responses:
+        "200":
+          description: Курс
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Courses]
+      summary: Изменить курс
+      description: Доступно администратору и преподавателю курса
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseEdit"
+            example:
+              status: ACTIVE
+      responses:
+        "200":
+          description: Курс обновлён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Courses]
+      summary: Удалить курс
+      description: Доступно только администратору
+      responses:
+        "204":
+          description: Курс удалён
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/courses/{id}/students:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Students]
+      summary: Записать студента на курс
+      description: Доступно администратору и преподавателю курса
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentAdd"
+            example:
+              student_id: 22222222-2222-2222-2222-222222222222
+      responses:
+        "201":
+          description: Студент записан на курс
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    get:
+      tags: [Students]
+      summary: Получить список студентов курса
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Sort"
+      responses:
+        "200":
+          description: Список студентов курса
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Students"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/courses/{id}/students/{student_id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - $ref: "#/components/parameters/StudentId"
+    delete:
+      tags: [Students]
+      summary: Отчислить студента с курса
+      description: Доступно администратору и преподавателю курса
+      responses:
+        "204":
+          description: Студент отчислен
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/assignments:
+    post:
+      tags: [Assignments]
+      summary: Создать задание
+      description: Доступно администратору и преподавателю курса
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignmentCreate"
+            example:
+              title: Лабораторная работа №1
+              description: Реализовать REST API для сервиса курсов
+              course_id: 00000000-0000-0000-0000-000000000000
+              submit_limit: 5
+              date_start: "2026-09-01"
+              date_end: "2026-09-30"
+              materials_url: https://example.com/materials/lab1
+      responses:
+        "201":
+          description: Задание создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assignment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    get:
+      tags: [Assignments]
+      summary: Получить список заданий
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Sort"
+        - name: course_id
+          in: query
+          description: Фильтр по курсу
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Список заданий
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assignments"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/assignments/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Assignments]
+      summary: Получить задание по идентификатору
+      responses:
+        "200":
+          description: Задание
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assignment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Assignments]
+      summary: Изменить задание
+      description: Доступно администратору и преподавателю курса
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignmentEdit"
+            example:
+              date_end: "2026-10-15"
+      responses:
+        "200":
+          description: Задание обновлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assignment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Assignments]
+      summary: Удалить задание
+      description: Доступно администратору и преподавателю курса
+      responses:
+        "204":
+          description: Задание удалено
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/submissions:
+    post:
+      tags: [Submissions]
+      summary: Отправить решение на проверку
+      description: Доступно студенту курса, пока не исчерпан лимит `submit_limit`
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmissionCreate"
+            example:
+              assignment_id: 33333333-3333-3333-3333-333333333333
+              repository_url: https://github.com/student/lab1
+      responses:
+        "201":
+          description: Решение отправлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/submissions/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Submissions]
+      summary: Получить отправку по идентификатору
+      responses:
+        "200":
+          description: Отправка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Submissions]
+      summary: Изменить отправку
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmissionEdit"
+            example:
+              repository_url: https://github.com/student/lab1-fixed
+      responses:
+        "200":
+          description: Отправка обновлена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Submissions]
+      summary: Удалить отправку
+      responses:
+        "204":
+          description: Отправка удалена
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/submissions/{id}/artifacts:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Submissions]
+      summary: Получить артефакты отправки
+      responses:
+        "200":
+          description: Артефакты отправки
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Artifacts"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/submissions/{id}/review:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Reviews]
+      summary: Создать проверку отправки
+      description: Доступно преподавателю курса
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewCreate"
+            example:
+              type: manual
+              feedback: Хорошая работа, но не хватает обработки ошибок
+              mark: 85.5
+      responses:
+        "201":
+          description: Проверка создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    get:
+      tags: [Reviews]
+      summary: Получить список проверок отправки
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Sort"
+      responses:
+        "200":
+          description: Список проверок
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reviews"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/submissions/{id}/review/{review_id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - $ref: "#/components/parameters/ReviewId"
+    get:
+      tags: [Reviews]
+      summary: Получить проверку по идентификатору
+      responses:
+        "200":
+          description: Проверка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Reviews]
+      summary: Изменить проверку
+      description: Доступно преподавателю курса
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewEdit"
+            example:
+              mark: 90
+              status: COMPLETED
+      responses:
+        "200":
+          description: Проверка обновлена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  schemas:
+    CourseStatus:
+      type: string
+      description: |
+        - `DRAFT` — черновик, доступен администраторам и преподавателям
+        - `ACTIVE` — активный курс, доступен всем
+        - `CLOSED` — закрыт, доступен только для просмотра
+      enum: [ACTIVE, CLOSED, DRAFT]
+      example: ACTIVE
+
+    SubmissionStatus:
+      type: string
+      description: |
+        - `SUBMITTED` — отправлено
+        - `PROCESSING` — проверяется
+        - `COMPLETED` — проверка завершена
+        - `FAILED` — ошибка проверки
+      enum: [SUBMITTED, PROCESSING, COMPLETED, FAILED]
+      example: SUBMITTED
+
+    ReviewType:
+      type: string
+      description: |
+        - `auto` — автоматическая проверка
+        - `manual` — проверка преподавателем
+      enum: [auto, manual]
+      example: manual
+
+    ReviewStatus:
+      type: string
+      enum: [PROCESSING, COMPLETED]
+      example: COMPLETED
+
+    Course:
+      type: object
+      required: [id, title, teacher_id, status, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          minLength: 15
+          maxLength: 255
+        description:
+          type: string
+          minLength: 32
+          maxLength: 4096
+        teacher_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/CourseStatus"
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    CourseCreate:
+      type: object
+      required: [title, teacher_id]
+      properties:
+        title:
+          type: string
+          minLength: 15
+          maxLength: 255
+        description:
+          type: string
+          minLength: 32
+          maxLength: 4096
+        teacher_id:
+          type: string
+          format: uuid
+        status:
+          allOf:
+            - $ref: "#/components/schemas/CourseStatus"
+          default: DRAFT
+      additionalProperties: false
+
+    CourseEdit:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 15
+          maxLength: 255
+        description:
+          type: string
+          minLength: 32
+          maxLength: 4096
+        teacher_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/CourseStatus"
+      additionalProperties: false
+
+    Courses:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Course"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    Student:
+      type: object
+      required: [student_id, course_id, created_at, updated_at]
+      properties:
+        student_id:
+          type: string
+          format: uuid
+        course_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    StudentAdd:
+      type: object
+      required: [student_id]
+      properties:
+        student_id:
+          type: string
+          format: uuid
+      additionalProperties: false
+
+    Students:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Student"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    Assignment:
+      type: object
+      required:
+        - id
+        - title
+        - course_id
+        - submit_limit
+        - date_start
+        - date_end
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        course_id:
+          type: string
+          format: uuid
+        submit_limit:
+          type: integer
+          minimum: 3
+          maximum: 10
+          description: Максимальное количество отправок решения
+        date_start:
+          type: string
+          format: date
+          description: Дата начала приёма решений
+        date_end:
+          type: string
+          format: date
+          description: Дата окончания приёма решений (не раньше `date_start`)
+        materials_url:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    AssignmentCreate:
+      type: object
+      required: [title, course_id, submit_limit, date_start, date_end]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        course_id:
+          type: string
+          format: uuid
+        submit_limit:
+          type: integer
+          minimum: 3
+          maximum: 10
+        date_start:
+          type: string
+          format: date
+        date_end:
+          type: string
+          format: date
+        materials_url:
+          type: string
+          format: uri
+      additionalProperties: false
+
+    AssignmentEdit:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        submit_limit:
+          type: integer
+          minimum: 3
+          maximum: 10
+        date_start:
+          type: string
+          format: date
+        date_end:
+          type: string
+          format: date
+        materials_url:
+          type: string
+          format: uri
+      additionalProperties: false
+
+    Assignments:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Assignment"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    Submission:
+      type: object
+      required:
+        - id
+        - assignment_id
+        - submitted_at
+        - repository_url
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        assignment_id:
+          type: string
+          format: uuid
+        submitted_at:
+          type: string
+          format: date-time
+        review_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Появляется после создания проверки
+        repository_url:
+          type: string
+          format: uri
+        status:
+          $ref: "#/components/schemas/SubmissionStatus"
+        artifacts_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Появляется после завершения проверки
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    SubmissionCreate:
+      type: object
+      required: [assignment_id, repository_url]
+      properties:
+        assignment_id:
+          type: string
+          format: uuid
+        repository_url:
+          type: string
+          format: uri
+      additionalProperties: false
+
+    SubmissionEdit:
+      type: object
+      minProperties: 1
+      properties:
+        repository_url:
+          type: string
+          format: uri
+      additionalProperties: false
+
+    Artifacts:
+      type: object
+      required: [submission_id, artifacts_url]
+      properties:
+        submission_id:
+          type: string
+          format: uuid
+        artifacts_url:
+          type: string
+          format: uri
+
+    Review:
+      type: object
+      required: [id, type, status, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        type:
+          $ref: "#/components/schemas/ReviewType"
+        feedback:
+          type: string
+        mark:
+          type: number
+          format: float
+          minimum: 10
+          maximum: 100
+        status:
+          $ref: "#/components/schemas/ReviewStatus"
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    ReviewCreate:
+      type: object
+      required: [feedback, mark]
+      properties:
+        type:
+          allOf:
+            - $ref: "#/components/schemas/ReviewType"
+          default: manual
+        feedback:
+          type: string
+        mark:
+          type: number
+          format: float
+          minimum: 10
+          maximum: 100
+      additionalProperties: false
+
+    ReviewEdit:
+      type: object
+      minProperties: 1
+      properties:
+        feedback:
+          type: string
+        mark:
+          type: number
+          format: float
+          minimum: 10
+          maximum: 100
+        status:
+          $ref: "#/components/schemas/ReviewStatus"
+      additionalProperties: false
+
+    Reviews:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    Pagination:
+      type: object
+      required: [offset, limit, total]
+      properties:
+        offset:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, status, path, request_id]
+          properties:
+            code:
+              type: string
+              example: COURSE_NOT_FOUND
+            message:
+              type: string
+              example: Курс не существует
+            status:
+              type: integer
+              example: 404
+            path:
+              type: string
+              example: /api/v1/courses/
+            request_id:
+              type: string
+              format: uuid
+              example: 00000000-0000-0000-0000-000000000000
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      description: Идентификатор ресурса
+      schema:
+        type: string
+        format: uuid
+    StudentId:
+      name: student_id
+      in: path
+      required: true
+      description: Идентификатор студента
+      schema:
+        type: string
+        format: uuid
+    ReviewId:
+      name: review_id
+      in: path
+      required: true
+      description: Идентификатор проверки
+      schema:
+        type: string
+        format: uuid
+    Limit:
+      name: limit
+      in: query
+      description: Количество элементов
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+    Offset:
+      name: offset
+      in: query
+      description: Смещение от начала
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Sort:
+      name: sort
+      in: query
+      description: Сортировка в формате `поле:направление`
+      schema:
+        type: string
+        example: created_at:desc
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Ключ идемпотентности
+      schema:
+        type: string
+        minLength: 36
+        maxLength: 36
+        example: 00000000-0000-0000-0000-000000000000
+
+  responses:
+    Unauthorized:
+      description: Ошибка авторизации
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            tokenMissing:
+              summary: Токен отсутствует
+              value:
+                error:
+                  code: TOKEN_MISSING
+                  message: Токен отсутствует
+                  status: 401
+                  path: /api/v1/courses
+                  request_id: 00000000-0000-0000-0000-000000000000
+            tokenExpired:
+              summary: Токен истёк
+              value:
+                error:
+                  code: TOKEN_EXPIRED
+                  message: Токен истёк
+                  status: 401
+                  path: /api/v1/courses
+                  request_id: 00000000-0000-0000-0000-000000000000
+    Forbidden:
+      description: Недостаточно прав
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: FORBIDDEN
+              message: Недостаточно прав для выполнения операции
+              status: 403
+              path: /api/v1/courses
+              request_id: 00000000-0000-0000-0000-000000000000
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: COURSE_NOT_FOUND
+              message: Курс не существует
+              status: 404
+              path: /api/v1/courses/00000000-0000-0000-0000-000000000000
+              request_id: 00000000-0000-0000-0000-000000000000
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak JWT
