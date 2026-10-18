@@ -31,6 +31,7 @@ paths:
     get:
       tags: [Courses]
       summary: Получить список доступных курсов
+      x-body: [admin, professor, student]
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
@@ -55,6 +56,7 @@ paths:
       description: Доступно только администратору
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
+      x-roles: [admin]
       requestBody:
         required: true
         content:
@@ -94,6 +96,7 @@ paths:
     get:
       tags: [Courses]
       summary: Получить курс по идентификатору
+      x-body: [admin, professor, student]
       responses:
         "200":
           description: Курс
@@ -111,6 +114,7 @@ paths:
       tags: [Courses]
       summary: Изменить курс
       description: Доступно администратору и преподавателю курса
+      x-roles: [admin, professor]
       requestBody:
         required: true
         content:
@@ -136,6 +140,7 @@ paths:
       tags: [Courses]
       summary: Удалить курс
       description: Доступно только администратору
+      x-roles: [admin]
       responses:
         "204":
           description: Курс удалён
@@ -153,6 +158,7 @@ paths:
       tags: [Students]
       summary: Записать студента на курс
       description: Доступно администратору и преподавателю курса
+      x-body: [admin, professor]
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -179,6 +185,7 @@ paths:
     get:
       tags: [Students]
       summary: Получить список студентов курса
+      x-body: [admin, professor, student]
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
@@ -205,6 +212,7 @@ paths:
       tags: [Students]
       summary: Отчислить студента с курса
       description: Доступно администратору и преподавателю курса
+      x-body: [admin, professor]
       responses:
         "204":
           description: Студент отчислен
@@ -220,6 +228,7 @@ paths:
       tags: [Assignments]
       summary: Создать задание
       description: Доступно администратору и преподавателю курса
+      x-body: [admin, professor]
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -252,6 +261,7 @@ paths:
     get:
       tags: [Assignments]
       summary: Получить список заданий
+      x-body: [admin, professor, student]
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
@@ -280,6 +290,7 @@ paths:
     get:
       tags: [Assignments]
       summary: Получить задание по идентификатору
+      x-body: [admin, professor, student]
       responses:
         "200":
           description: Задание
@@ -297,6 +308,7 @@ paths:
       tags: [Assignments]
       summary: Изменить задание
       description: Доступно администратору и преподавателю курса
+      x-body: [admin, professor]
       requestBody:
         required: true
         content:
@@ -322,6 +334,7 @@ paths:
       tags: [Assignments]
       summary: Удалить задание
       description: Доступно администратору и преподавателю курса
+      x-body: [admin, professor]
       responses:
         "204":
           description: Задание удалено
@@ -337,6 +350,7 @@ paths:
       tags: [Submissions]
       summary: Отправить решение на проверку
       description: Доступно студенту курса, пока не исчерпан лимит `submit_limit`
+      x-body: [admin, student]
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -368,6 +382,7 @@ paths:
     get:
       tags: [Submissions]
       summary: Получить отправку по идентификатору
+      x-body: [admin, professor, student]
       responses:
         "200":
           description: Отправка
@@ -384,6 +399,7 @@ paths:
     patch:
       tags: [Submissions]
       summary: Изменить отправку
+      x-body: [admin, student]
       requestBody:
         required: true
         content:
@@ -408,6 +424,7 @@ paths:
     delete:
       tags: [Submissions]
       summary: Удалить отправку
+      x-body: [admin, student]
       responses:
         "204":
           description: Отправка удалена
@@ -424,6 +441,7 @@ paths:
     get:
       tags: [Submissions]
       summary: Получить артефакты отправки
+      x-body: [admin, professor, student]
       responses:
         "200":
           description: Артефакты отправки
@@ -445,6 +463,7 @@ paths:
       tags: [Reviews]
       summary: Создать проверку отправки
       description: Доступно преподавателю курса
+      x-body: [admin, professor]
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -473,6 +492,7 @@ paths:
     get:
       tags: [Reviews]
       summary: Получить список проверок отправки
+      x-body: [admin, professor, student]
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
@@ -498,6 +518,7 @@ paths:
     get:
       tags: [Reviews]
       summary: Получить проверку по идентификатору
+      x-body: [admin, professor, student]
       responses:
         "200":
           description: Проверка
@@ -515,6 +536,7 @@ paths:
       tags: [Reviews]
       summary: Изменить проверку
       description: Доступно преподавателю курса
+      x-body: [admin, professor]
       requestBody:
         required: true
         content:
@@ -1073,19 +1095,40 @@ components:
                   status: 401
                   path: /api/v1/courses
                   request_id: 00000000-0000-0000-0000-000000000000
+            tokenInvalid:
+              summary: Токен не действителен
+              value:
+                error:
+                  code: TOKEN_INVALID
+                  message: Неверная подпись или формат токена
+                  status: 401
+                  path: /api/v1/courses
+                  request_id: 00000000-0000-0000-0000-000000000000
     Forbidden:
       description: Недостаточно прав
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Error"
-          example:
-            error:
-              code: FORBIDDEN
-              message: Недостаточно прав для выполнения операции
-              status: 403
-              path: /api/v1/courses
-              request_id: 00000000-0000-0000-0000-000000000000
+          examples:
+            roleNotAllowed:
+              summary: Роль не допускается к операции
+              value:
+                error:
+                  code: FORBIDDEN_ROLE
+                  message: Операция недоступна для вашей роли
+                  status: 403
+                  path: /api/v1/courses
+                  request_id: 00000000-0000-0000-0000-000000000000
+            notCourseMember:
+              summary: Пользователь не относится к курсу
+              value:
+                error:
+                  code: FORBIDDEN_NOT_COURSE_MEMBER
+                  message: Вы не являетесь преподавателем или студентом этого курса
+                  status: 403
+                  path: /api/v1/courses/00000000-0000-0000-0000-000000000000
+                  request_id: 00000000-0000-0000-0000-000000000000
     NotFound:
       description: Ресурс не найден
       content:
@@ -1105,4 +1148,6 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Keycloak JWT
+      description: |
+        Keycloak JWT ('courses' realm)
+        `realm_access.roles`: `admin`, `professor`, `student`.

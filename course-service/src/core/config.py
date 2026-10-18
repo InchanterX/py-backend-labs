@@ -24,9 +24,16 @@ Always assigns to model_config variable of a class to setup its behaviors.
 
 
 class AppSettings(BaseSettings):
-    title: str = "Course service title"
-    description: str = "Course service description"
+    title: str = "Course service"
+    description: str = "Course service API"
     summary: str = "Course service summary"
+    version: str = "1.0.0"
+    contact: dict[str, str] = Field(
+        default_factory=lambda: {"name": "Тех. поддержка", "email": "support@yandex.ru"}
+    )
+    servers: list[dict[str, str]] = Field(
+        default_factory=lambda: [{"url": "http://127.0.0.1:8000", "description": "Development"}]
+    )
     debug: bool = False
     docs_url: str | None = "/docs"
     redoc_url: str | None = "/redoc"

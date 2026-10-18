@@ -6,7 +6,7 @@ import yaml
 from src.core.config import get_settings
 from src.web.app import create_app
 from src.web.lifespans import lifespan_app
-from src.web.routers import service_router
+from src.web.routers import ROUTERS
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +15,5 @@ if __name__ == "src.main":
         log_config = yaml.safe_load(file)
     logging.config.dictConfig(log_config)
     settings = get_settings()
-    routers = (service_router,)
-    app = create_app(settings, routers, lifespan=lifespan_app)
+    app = create_app(settings, ROUTERS, lifespan=lifespan_app)
     logger.debug(f"Created app={app} with settings={settings}")

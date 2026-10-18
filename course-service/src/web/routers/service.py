@@ -5,13 +5,14 @@ from fastapi import APIRouter
 from src.core.schemas import ServiceInfo
 from src.core.services import get_service_info
 from src.web.lifespans import lifespan_service_router
+from src.web.routers.common import API_PREFIX
 
 logger = logging.getLogger(__name__)
 
 service_router = APIRouter(
-    prefix="/course",  # /cource/
+    prefix=API_PREFIX,  # /api/v1/
     lifespan=lifespan_service_router,  # custom context manager
-    tags=["cource"],  # groups for swagger
+    tags=["Service"],  # groups for swagger
 )
 
 """
@@ -21,7 +22,7 @@ That one uses method GET (.get). It is also can be .post, .put, .patch, .delete 
 
 
 @service_router.get(
-    "/",
+    "/health",
     # description in Swagger
     description="Course service info route",
     # returned value will be validated through the given schema
